@@ -12,7 +12,7 @@ struct Tarea
 void CargarTarea(struct Tarea **ListaTareas, int num);
 void mostrarTarea(struct Tarea **ListaTareas, int num);
 void BuscarTarea(struct Tarea **ListaTareas, int cantidadT, int idBuscado);
-struct Tarea *buscarTareaPorDescripcion(struct Tarea **ListaTareas, int cantidadT, char *pClave);
+void buscarTareaPorDescripcion(struct Tarea **ListaTareas, int cantidadT, char *pClave);
 void PendientesORealizadas(struct Tarea **ListaTareas, struct Tarea **tareasRealizadas, struct Tarea **tareasPendientes, int CantidadT, int numTRealizadas, int numTPendientes);
 
 int main()
@@ -45,7 +45,7 @@ int main()
     // Carga de Tareas
     for (int i = 0; i < cantidadT; i++)
     {
-        printf("Tarea #%d: \n", i + 1);
+        printf("Tarea ID #%d: \n", i + 1);
         CargarTarea(ListaTareas, i);
     }
     printf("\n");
@@ -64,27 +64,15 @@ int main()
     // Buscar una tarea de la lista por id
 
     BuscarTarea(ListaTareas, cantidadT, idBuscado);
-    PendientesORealizadas(ListaTareas, tareasRealizadas, tareasPendientes, cantidadT, numTRealizadas, numTPendientes);
 
     // Buscar una tarea de la lista por id
     printf("Ingrese una palabra clave para realizar la busqueda de Tarea/s: ");
     scanf("%s", &pClave);
     fflush(stdin);
-    porDescripcion = buscarTareaPorDescripcion(ListaTareas, cantidadT, pClave);
-    if (porDescripcion != NULL)
-    {
-
-        printf("Tarea Buscada por palabra: \n");
-        printf("ID: %d \n", porDescripcion->TareaID);
-        printf("Descripcion: %s \n", porDescripcion->Descripcion);
-        printf("Duracion: %d \n", porDescripcion->Duracion);
-    }
-    else
-    {
-        printf("Tarea no encontrada \n");
-    }
+    buscarTareaPorDescripcion(ListaTareas, cantidadT, pClave);
 
     // Enlistar las Tareas e ir Preguntando si la Tarea se realizó o no e ir sumando al contador de tareas realizadas o pendientes
+    PendientesORealizadas(ListaTareas, tareasRealizadas, tareasPendientes, cantidadT, numTRealizadas, numTPendientes);
 
     // Liberamos la memoria reservada para cada uno de los strings
     for (int i = 0; i < cantidadT; i++)
@@ -114,7 +102,7 @@ void CargarTarea(struct Tarea **ListaTareas, int cantidadT)
     printf("Ingrese la duracion de la tarea (entre 10-100 min): \n");
     fflush(stdin);
     scanf("%d", &ListaTareas[cantidadT]->Duracion);
-    ListaTareas[cantidadT]->TareaID=+1;
+    ListaTareas[cantidadT]->TareaID = cantidadT + 1;
 }
 
 void mostrarTarea(struct Tarea **ListaTareas, int cantidadT)
@@ -141,7 +129,7 @@ void BuscarTarea(struct Tarea **ListaTareas, int cantidadT, int idBuscado)
     }
 }
 
-struct Tarea *buscarTareaPorDescripcion(struct Tarea **ListaTareas, int cantidadT, char *pClave)
+void buscarTareaPorDescripcion(struct Tarea **ListaTareas, int cantidadT, char *pClave)
 {
 
     int encontradas = 0;
@@ -151,9 +139,9 @@ struct Tarea *buscarTareaPorDescripcion(struct Tarea **ListaTareas, int cantidad
         {
             if (strstr(ListaTareas[i]->Descripcion, pClave) != NULL)
             {
-                return (ListaTareas[i]);
-                encontradas++;
+            encontradas++;
             }
+            
         }
 
         if (encontradas == 0)
@@ -163,7 +151,12 @@ struct Tarea *buscarTareaPorDescripcion(struct Tarea **ListaTareas, int cantidad
         else
         {
             printf("Se encontraron %d tarea(s) con la descripcion \"%s\"\n", encontradas, pClave);
+            printf("Tarea Buscada por palabra: \n");
+
         }
+                printf("ID: %d \n", ListaTareas[i]->TareaID);
+                printf("Descripcion: %s \n", ListaTareas[i]->Descripcion);
+                printf("Duracion: %d \n", ListaTareas[i]->Duracion);
     }
 }
 void PendientesORealizadas(struct Tarea **ListaTareas, struct Tarea **tareasRealizadas, struct Tarea **tareasPendientes, int CantidadT, int numTRealizadas, int numTPendientes)
