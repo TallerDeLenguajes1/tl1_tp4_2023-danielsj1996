@@ -18,19 +18,19 @@ typedef struct Nodo
 Nodo *inicilizarLista();
 Tarea NuevaTarea(char *buff);
 Nodo *CrearNodo(Tarea nTarea);
-void controlarTareas(Nodo **tareasPendientes, Nodo **tareasRealizadas);
+void controlarTareas(Nodo **tareasPendientes, Nodo **tareasRealizadas, Nodo **tareasEnProceso);
 void agregarTareaAlinicio(Nodo **tarea, Tarea nTarea); //
 void listarTareas(Nodo *tareas);
 void AgregarTarea_A_OtraLista(Nodo **lista, Nodo *tarea);
-Nodo *BuscaTareaPorPalabra(Nodo *tareasPendientes, Nodo *tareasRealizadas, char *buff);
-Nodo *BuscaTareaPorId(Nodo *tareasPendientes, Nodo *tareasRealizadas);
+Nodo *BuscaTareaPorPalabra(Nodo *tareasPendientes, Nodo *tareasRealizadas, Nodo *tareasEnProceso, char *buff);
+Nodo *BuscaTareaPorId(Nodo *tareasPendientes, Nodo *tareasRealizadas, Nodo *tareasEnProceso);
 void mostraTareaUnica(Nodo *tarea);
 void liberMemoriaGeneral(Nodo *tarea);
-void menu(Nodo **tareasPendientess, Nodo **tareasRealizadass, char *buff);
+void menu(Nodo **tareasPendientess, Nodo **tareasRealizadass, Nodo **tareasEnProcesoo, char *buff);
 void EliminarTarea(Nodo *tarea);
 void MostrarDatos(Nodo *lista);
 Nodo *QuitarTarea(Nodo **lista, int id);
-void MoverTareas(Nodo **tareasPendientess, Nodo **tareasRealizadass, Nodo *Mover, int bandera);
+void MoverTareas(Nodo **tareasPendientess, Nodo **tareasRealizadass, Nodo **tareasEnProcesoo, Nodo *Mover, int bandera);
 
 //>>>>>>>>>>>>>>>>><<   AQUI MAIN >>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -41,7 +41,7 @@ int main(void)
     Nodo *tareasPendientes = inicilizarLista();
     Nodo *tareasRealizadas = inicilizarLista();
     Nodo *tareasEnProceso = inicilizarLista();
-    menu(&tareasPendientes, &tareasRealizadas, buff);
+    menu(&tareasPendientes, &tareasRealizadas, &tareasEnProceso, buff);
     liberMemoriaGeneral(tareasPendientes);
     liberMemoriaGeneral(tareasRealizadas);
     free(buff);
@@ -91,11 +91,11 @@ Tarea NuevaTarea(char *buff)
     return nTarea;
 }
 
-void controlarTareas(Nodo **tareasPendientes, Nodo **tareasRealizadas)
+void controlarTareas(Nodo **tareasPendientes, Nodo **tareasRealizadas, Nodo **tareasEnProceso)
 {
     Nodo *auxTareasPendientes = *tareasPendientes;
     Nodo *auxTareasRealizadas = *tareasRealizadas;
-
+    Nodo *auxtareasEnProceso = *tareasEnProceso;
     Nodo *Eliminar, *Mover;
     int id, bandera = 0;
     int operacion;
@@ -106,17 +106,38 @@ void controlarTareas(Nodo **tareasPendientes, Nodo **tareasRealizadas)
         listarTareas(*tareasPendientes);
         puts("\n\tTAREAS REALIZADAS\n\n");
         listarTareas(*tareasRealizadas);
+        puts("\n\tTAREAS EN PROCESO\n\n");
+        listarTareas(*tareasEnProceso);
         puts("\nindique el ID de la tarea a modificar");
         fflush(stdin);
         scanf("%d", &id);
-        printf("\nindique la operacion (1 = mover, 2 = salir ): ");
+        printf("\nindique la operacion (1 = eliminar, 2 = mover, 3 = nada ): ");
         fflush(stdin);
         scanf("%d", &operacion);
 
+        if (operacion == 1)
+        {
+            Eliminar = QuitarTarea(tareasPendientes, id);
 
-            if (operacion == 1)
+            if (Eliminar == NULL)
+                Eliminar = QuitarTarea(tareasEnProceso, id);
+
+            if (Eliminar == NULL)
+                Eliminar = QuitarTarea(tareasRealizadas, id);
+
+            EliminarTarea(Eliminar);
+        }
+        else
+        {
+            if (operacion == 2)
             {
                 Mover = QuitarTarea(tareasPendientes, id);
+
+                if (Mover == NULL)
+                {
+                    Mover = QuitarTarea(tareasEnProceso, id);
+                    bandera++;
+                }
 
                 if (Mover == NULL)
                 {
@@ -125,10 +146,10 @@ void controlarTareas(Nodo **tareasPendientes, Nodo **tareasRealizadas)
                     bandera++;
                 }
 
-                MoverTareas(tareasPendientes, tareasRealizadas, Mover, bandera);
+                MoverTareas(tareasPendientes, tareasRealizadas, tareasEnProceso, Mover, bandera);
                 bandera = 0;
             }
-        
+        }
         puts("\nDesea Modificar otra tarea ( si=1  0=no )");
         fflush(stdin);
         scanf("%d", &operacion);
@@ -160,10 +181,11 @@ void AgregarTarea_A_OtraLista(Nodo **Lista, Nodo *tarea)
     puts("movimiento Exitoso");
 }
 
-Nodo *BuscaTareaPorId(Nodo *tareasPendientes, Nodo *tareasRealizadas)
+Nodo *BuscaTareaPorId(Nodo *tareasPendientes, Nodo *tareasRealizadas, Nodo *tareasEnProceso)
 {
     Nodo *auxPendientes = tareasPendientes;
     Nodo *auxRealizadas = tareasRealizadas;
+    Nodo *auxEnProceso = tareasEnProceso;
     int id;
     printf("\nIgrese el id a buscar: ");
     fflush(stdin);
@@ -186,13 +208,21 @@ Nodo *BuscaTareaPorId(Nodo *tareasPendientes, Nodo *tareasRealizadas)
         }
         auxRealizadas = auxRealizadas->Siguiente;
     }
-
+    while (auxEnProceso != NULL)
+    {
+        if (id == auxEnProceso->T.TareaID)
+        {
+            return (auxEnProceso);
+        }
+        auxEnProceso = auxEnProceso->Siguiente;
+    }
     return (NULL);
 }
-Nodo *BuscaTareaPorPalabra(Nodo *tareasPendientes, Nodo *tareasRealizadas, char *buff)
+Nodo *BuscaTareaPorPalabra(Nodo *tareasPendientes, Nodo *tareasRealizadas, Nodo *tareasEnProceso, char *buff)
 {
     Nodo *auxPendientes = tareasPendientes;
     Nodo *auxRealizadas = tareasRealizadas;
+    Nodo *auxEnProceso = tareasEnProceso;
     puts("\ningrese la una palabra clave a buscar: ");
     fflush(stdin);
     gets(buff);
@@ -214,7 +244,14 @@ Nodo *BuscaTareaPorPalabra(Nodo *tareasPendientes, Nodo *tareasRealizadas, char 
         }
         tareasRealizadas = tareasRealizadas->Siguiente;
     }
-
+    while (auxEnProceso != NULL)
+    {
+        if (strstr(auxEnProceso->T.Descripcion, buff) != NULL)
+        {
+            return (auxEnProceso);
+        }
+        auxEnProceso = auxEnProceso->Siguiente;
+    }
     return (NULL);
 }
 
@@ -281,11 +318,11 @@ void EliminarTarea(Nodo *tarea)
         puts("\nError al eliminar, La tarea no existe!");
 }
 
-void menu(Nodo **tareasPendientess, Nodo **tareasRealizadass, char *buff)
+void menu(Nodo **tareasPendientess, Nodo **tareasRealizadass, Nodo **tareasEnProcesoo, char *buff)
 {
     Nodo *tareasPendientes = *tareasPendientess;
     Nodo *tareasRealizadas = *tareasRealizadass;
-  
+    Nodo *tareasEnProceso = *tareasEnProcesoo;
     Nodo *busquedaID;
     Nodo *busquedaPorPalabra;
     int opcion;
@@ -296,7 +333,8 @@ void menu(Nodo **tareasPendientess, Nodo **tareasRealizadass, char *buff)
         puts("\t\t\t(3)- listar tareas");
         puts("\t\t\t(4)- Buscar Tareas por Id");
         puts("\t\t\t(5)- Buscar Tareas por palabra clave");
-        puts("\t\t\t(6)- salir");
+        puts("\t\t\t(6)- Info General de las 3 listas");
+        puts("\t\t\t(7)- salir");
         fflush(stdin);
         scanf("%d", &opcion);
         switch (opcion)
@@ -314,29 +352,37 @@ void menu(Nodo **tareasPendientess, Nodo **tareasRealizadass, char *buff)
 
             break;
         case 2:
-            controlarTareas(&tareasPendientes, &tareasRealizadas);
+            controlarTareas(&tareasPendientes, &tareasRealizadas, &tareasEnProceso);
             break;
         case 3:
             puts("\tTAREAS PENDIENTES\n");
             listarTareas(tareasPendientes);
             puts("\n\n\tTAREAS REALIZADAS\n\n");
             listarTareas(tareasRealizadas);
-
+            puts("\n\n\tTAREAS EN PROCESO\n\n");
+            listarTareas(tareasEnProceso);
             break;
         case 4:
-            busquedaID = BuscaTareaPorId(tareasPendientes, tareasRealizadas);
+            busquedaID = BuscaTareaPorId(tareasPendientes, tareasRealizadas, tareasEnProceso);
             mostraTareaUnica(busquedaID);
 
             break;
         case 5:
 
-            busquedaPorPalabra = BuscaTareaPorPalabra(tareasPendientes, tareasRealizadas, buff);
+            busquedaPorPalabra = BuscaTareaPorPalabra(tareasPendientes, tareasRealizadas, tareasEnProceso, buff);
             mostraTareaUnica(busquedaPorPalabra);
             break;
-
+        case 6:
+            puts("\tTAREAS PENDIENTES\n");
+            MostrarDatos(tareasPendientes);
+            puts("\n\n\tTAREAS REALIZADAS\n\n");
+            MostrarDatos(tareasRealizadas);
+            puts("\n\n\tTAREAS EN PROCESO\n\n");
+            MostrarDatos(tareasEnProceso);
+            break;
         }
 
-    } while (opcion != 6);
+    } while (opcion != 7);
 }
 
 Nodo *QuitarTarea(Nodo **lista, int id)
@@ -364,10 +410,29 @@ Nodo *QuitarTarea(Nodo **lista, int id)
 
     return auxTareaActual; // retorna el nodo que se va a sacar;
 }
-void MoverTareas(Nodo **tareasPendientess, Nodo **tareasRealizadass, Nodo *Mover, int bandera)
+void MoverTareas(Nodo **tareasPendientess, Nodo **tareasRealizadass, Nodo **tareasEnProcesoo, Nodo *Mover, int bandera)
 {
     int opcionlista;
+    switch (bandera)
+    {
+    case 0:
+        puts("\nindique a que lista desea mover (1 = Tareas en Proceso, 2 = Tareas Realizadas )");
+        scanf("%d", &opcionlista);
 
+        if (opcionlista == 1)
+        {
+            AgregarTarea_A_OtraLista(tareasEnProcesoo, Mover);
+        }
+        else
+        {
+            if (opcionlista == 2)
+            {
+                AgregarTarea_A_OtraLista(tareasRealizadass, Mover);
+            }
+        }
+
+        break;
+    case 1:
         puts("\nindique a que lista desea mover (1 = Tareas Pendientes, 2 = Tareas Realizadas )");
         scanf("%d", &opcionlista);
         if (opcionlista == 1)
@@ -381,6 +446,21 @@ void MoverTareas(Nodo **tareasPendientess, Nodo **tareasRealizadass, Nodo *Mover
                 AgregarTarea_A_OtraLista(tareasRealizadass, Mover);
             }
         }
-
- 
+        break;
+    case 2:
+        puts("\nindique a que lista desea mover (1 = Tareas en Proceso, 2 = Tareas Pendientes )");
+        scanf("%d", &opcionlista);
+        if (opcionlista == 1)
+        {
+            AgregarTarea_A_OtraLista(tareasEnProcesoo, Mover);
+        }
+        else
+        {
+            if (opcionlista == 2)
+            {
+                AgregarTarea_A_OtraLista(tareasPendientess, Mover);
+            }
+        }
+        break;
+    }
 }
